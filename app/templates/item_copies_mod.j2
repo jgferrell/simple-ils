@@ -1,0 +1,31 @@
+    <tr class="item-copy {{ row_class }}">
+	<td class="id mono">{{ row_data['id'] }}</td>
+	<td class="barcode mono">
+	    <span style="display:none" class="original">{{ row_data['barcode'] }}</span>
+	    {{ form['barcode'] }}
+	</td>
+	<td class="branch mono">
+	    <span style="display:none" class="original">{{ row_data['home_branch_id'] }}</span>
+	    {{ form['home_branch'] }}
+	</td>
+	<td class="status mono">
+	    <span style="display:none" class="original">{{ row_data['status'] }}</span>
+	    {{ form['status'] }}
+	</td>
+	<td class="circs mono">
+	    <span style="display:none" class="original">{{ row_data['circs'] }}</span>
+	    {{ form['circs'] }}
+	</td>
+	<td class="save">
+	    <img class="button save"
+		 src="{{ url_for('static', filename='img/save.png') }}"
+		 alt="Save modifications to item {{ row_data['barcode'] }}." />
+	</td>
+	<td class="cancel">
+	    <img class="button cancel"
+		 src="{{ url_for('static', filename='img/cancel.png') }}"
+		 alt="Cancel updating item {{ row_data['barcode'] }}." />
+	</td>
+	<td>
+	</td>
+    </tr>

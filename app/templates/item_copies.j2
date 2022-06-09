@@ -1,0 +1,30 @@
+    <tr class="item-copy">
+	<td class="id mono">{{ row['id'] }}</td>
+	<td class="barcode mono">{{ row['barcode'] }}</td>
+	<td class="branch mono">
+	    <span style="display:none" class="branch-id">
+		{{ row['home_branch_id'] }}
+	    </span>
+	    <abbr title="{{ row['home_branch_name'] }}">
+		{{ row['home_branch_code'] }}
+	    </abbr>
+	</td>
+	<td class="status mono">{{ row['status'] }}</td>
+	<td class="circs mono">{{ row['circs'] }}</td>
+	<td class="modify"><img class="button modify"
+		 src="{{ url_for('static', filename='img/modify.png') }}"
+		 alt="Modify item {{ row['barcode'] }}" />
+	</td>
+	<td class="delete">
+	    <img class="button delete"
+		 src="{{ url_for('static', filename='img/delete.png') }}"
+		 alt="Delete item {{ row['barcode'] }}" />
+	</td>
+	<td class="delete-confirm">
+	    <span class="delete-confirm" style="display:none">
+		Really delete this record?
+		<a class="yes" href="#"><abbr class="noline" title="Yes.">Y</abbr></a> /
+		    <a class="no" href="#"><abbr class="noline" title="No.">N</abbr></a>
+	    </span>
+	</td>
+    </tr>

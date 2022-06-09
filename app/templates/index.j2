@@ -1,0 +1,31 @@
+{% extends 'page.j2' %}
+{% block scripts %}
+    <script src="https://code.jquery.com/jquery-2.1.1.js"></script>
+    <script type="text/javascript"> // jQuery API documentation: https://api.jquery.com/
+     $(document).ready(function(){
+	 $('#reset-database A').click(function(a) {
+	     var span = $(this).parent();
+	     span.text('Resetting database.');
+	     a.preventDefault();
+	     $.post('/reset', {}, function() {
+		 console.log('Resetting database.');
+	     }).done(function() {
+		 console.log('Done.');
+		 span.text('Done.');
+	     });
+	 });
+     });
+    </script>
+{% endblock %}
+{% block page_title %}Home{% endblock %}
+{% block page_content %}
+    <p class="callout">
+ 	<img height="30"
+	     src="{{ url_for('static', filename='img/note.png') }}"
+	     alt="NOTE:" />
+	<span id="reset-database"><a href="#">Reset database to example values.</a></span>
+    </p>
+    
+    <img src="{{ url_for('static', filename='img/SEG_Library.jpg') }}" alt="">
+    <p style="margin:0; font-size:8pt">"<a href="https://commons.wikimedia.org/wiki/File:SEG_Library.jpg">SEG Library</a>" by <a href="https://commons.wikimedia.org/wiki/user:Naxtr4Time">Naxtr4Time</a> is licensed under <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.</p>
+{% endblock %}

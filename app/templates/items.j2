@@ -1,0 +1,332 @@
+{% extends 'page.j2' %}
+{% block scripts %}
+    <script src="https://code.jquery.com/jquery-2.1.1.js"></script>
+    <script type="text/javascript"> // jQuery API documentation: https://api.jquery.com/   
+     // CATALOG ITEM FUNCTIONS
+     //
+     $(document).ready(function(){
+	 //
+	 // Clicking on a table row in "Catalog Items" table causes copies of
+	 // that item to display in the "Item Copies" table.
+	 //
+	 $('TR.catitem TD').click(function() {
+	     var catalog_id = $(this).parent('TR').children('.id').text();
+	     var author = $(this).parent('TR').children('.author').text();
+	     var title = $(this).parent('TR').children('.title').text();
+	     var callno = $(this).parent('TR').children('.callno').text();
+	     $.getJSON('/item_copies/select/by_catitem', {
+		 catalog_id: catalog_id
+	     }, function(data) {
+		 console.log('Loading copies of "' + title + '" by ' +
+			     author + '.');
+		 $('TR.item-copy').remove();
+		 if (data.rows.length > 0) {
+		     $.each(data.rows, function(i) {
+			 var row = data.rows[i]
+			 $('#item-copies-table TBODY').append(row);
+		     });
+		     $('.item-copies-found').show();
+		     $('.item-copies-not-found').hide();
+		 } else {
+		     $('.item-copies-found').hide();
+		     $('.item-copies-not-found').show();
+		 }
+		 $('.catitem-author').text(author);
+		 $('.catitem-title').text(title);
+		 $('.catitem-id').text(catalog_id);
+	     }).done(function() {
+		 $('#item-copies').show();
+	     });
+	 });
+     });
+     // ITEM COPY FUNCTIONS
+     //
+     function itemCopyAttribs(tr) {
+	 // takes a table row from the "Item Copies" table and returns
+	 // a Javascript object with attributes of that row
+	 var branch_id = tr.children('.branch').children('.branch-id');
+	 return {
+	     id: Number(tr.children('.id').text()),
+	     catalog_item: Number($('.catitem-id').text()),
+	     home_branch: Number(branch_id.text().trim()),
+	     barcode: tr.children('.barcode').text(),
+	     status: Number(tr.children('.status').text()),
+	     circs: Number(tr.children('.circs').text())
+	 }
+     }
+     function itemCopyAttribsFromFields(tr) {
+	 // takes a table row from the "Item Copies" table and returns
+	 // a Javascript object filled with the row's input field
+	 // values
+	 return {
+	     id: tr.children('.id').text(),
+	     catalog_item: Number($('.catitem-id').text()),
+	     home_branch: tr.children('TD.branch').children('SELECT').val(),
+	     barcode: tr.children('TD.barcode').children('INPUT').val(),
+	     status: tr.children('TD.status').children('INPUT').val(),
+	     circs: tr.children('TD.circs').children('INPUT').val()
+	 }
+     }
+     function saveItemCopyFromFields(tr, url) {
+	 // creates a new Item_copies entry based on user-provided
+	 // input field values
+	 var attribs = itemCopyAttribsFromFields(tr);
+	 var updated = false;	 
+	 $.post(url, attribs, function(data) {
+	     if (data.result == 'success') {
+		 console.log('item copy save: success detected');
+		 tr.replaceWith(data.row);
+		 if ($('TR.addnew-item-copy').length < 1) {
+		     $('.add-new-item-copy').show();
+		 }
+	     } else {
+		 console.log('item copy save: error detected');
+		 // error handling: assuming it's a duplicate barcode
+		 err = '<span class="error-msg">' + data.msg + '</span>';
+		 tr.children('TD.barcode').addClass('error-alert');
+		 tr.children('TD.barcode').append(err);
+	     }
+	 });
+     }
+     function numItemCopies() {
+	 return $('#item-copies-table TBODY').children().length - 1;
+     }
+     //
+     // Clicking on the "Modify" icon in the "Item Copies" table
+     // replaces text with pre-populated input fields.
+     //
+     $(document).on('click', 'TD.modify', function() {
+	 var parent = $(this).parent('TR');
+	 var attribs = itemCopyAttribs(parent);
+	 $.getJSON('/item_copies/get/form/update', attribs, function(data) {
+	     parent.replaceWith(data.row);
+	 });
+     });
+     //
+     // Clicking the "Save" icon in the "Item Copies" table
+     // in a "modify" form row context updates database entry.
+     //
+     $(document).on('click', 'TR.modify-item-copy TD.save', function() {
+	 var parent = $(this).parent('TR');
+	 var url = '/item_copies/update/by_copyid';
+	 saveItemCopyFromFields(parent, url);
+     });
+     //
+     // Clicking the "Cancel" icon in the "Item Copies" table
+     // in a "modify" form row context cancels an update.
+     //
+     $(document).on('click', 'TR.modify-item-copy TD.cancel', function() {
+	 var parent = $(this).parent('TR');
+	 $.getJSON('/item_copies/select/by_copyid', {
+	     id: parent.children('TD.id').text()
+	 }, function(data) {
+	     parent.replaceWith(data.row);
+	 });
+     });
+     //
+     // Clicking the "Delete" icon asks for user confirmation and
+     // deletes record if confirmation is received.
+     //
+     $(document).on('click', 'TD.delete', function() {
+	 $(this).siblings('TD.delete-confirm').children('SPAN.delete-confirm').show();
+     });
+     $(document).on('click', 'SPAN.delete-confirm .no', function(a) {
+	 a.preventDefault();
+	 console.log('Deletiong of item copy is canceled.');
+	 $(this).parent('SPAN.delete-confirm').hide();
+     });
+     $(document).on('click', 'SPAN.delete-confirm .yes', function(a) {
+	 a.preventDefault();
+	 var tr = $(this).parents('TR');
+	 console.log('Deleting item copy.');
+	 $.post('/item_copies/delete/by_copyid', {
+	     id: tr.children('TD.id').text()
+	 }, function() {
+	     tr.remove();
+	 }).done(function() {
+	     if (numItemCopies() < 1) {
+		 $('.item-copies-found').hide();
+		 $('.item-copies-not-found').show();
+		 console.log('Deleted the last copy.');
+	     } else {
+		 console.log(numItemCopies() + ' copy left.');
+	     }
+	 });
+     });
+     //
+     // Clicking the "Add" icon summons a row of input fields allowing
+     // user to add new item copy.
+     //
+     $(document).on('click', '.add-new-item-copy IMG', function() {
+	 $.getJSON('/item_copies/get/form/addnew', {
+	     catalog_item: $('.catitem-id').text()
+	 }, function(data) {
+	     $('.item-copies-not-found').hide();
+	     $('.add-new-item-copy').hide();
+	     $('#item-copies-table').show();
+	     $('#item-copies-table TR:first-of-type').after(data.row);
+	 });
+     });
+     //
+     // Clicking the "Save" icon in the "Item Copies" table in an
+     // "add new" form row context creates a new database entry.
+     //
+     $(document).on('click', 'TR.addnew-item-copy TD.save', function() {
+	 var parent = $(this).parent('TR');
+	 var url = '/item_copies/update/addnew';
+	 var updated = saveItemCopyFromFields(parent, url);
+	 console.log(updated);
+	 if (updated) {
+	     $('.add-new-item-copy').show();
+	 }
+     });
+     //
+     // Clicking the "Cancel" icon in the "Item Copies" table
+     // in an "add new" form row context cancels an update.
+     //
+     $(document).on('click', 'TR.addnew-item-copy TD.cancel', function() {
+	 $(this).parent('TR').remove();
+	 if (numItemCopies() > 0) {
+	     $('#item-copies-table').show();
+	 } else {
+	     $('#item-copies-table').hide();
+	     $('.item-copies-not-found').show();
+	 }
+	 $('.add-new-item-copy').show();
+     });
+    </script>
+{% endblock scripts %}
+
+{% block title %}Library Items{% endblock %}
+{% block page_content %}
+    <div id="catalog-items">
+	<div id="catalog-forms">
+	    <!-- "CATALOG ITEM SEARCH" FORM -->
+	    <div id="catalog-search-form-wrapper">
+		<h3>Search the catalog</h3>
+		<form id="catalog-search-form" method="post" role="form">
+		    {{ search.hidden_tag() }}
+		    {{ wtf.form_errors(search, hiddens="only") }}
+		    <div>
+			{{ search.query.label }}
+			{{ search.query }}
+		    </div>
+		    <div>
+			{{ search.title }}
+			{{ search.author }}
+			{{ search.callno }}
+			{{ search.reset }}
+		    </div>
+		</form>
+		{% if search.errors %}
+		    <ul class="errors">
+			{% for error in search.errors.values() %}
+			    <li>{{ ' '.join(error) }}</li>
+			{% endfor %}
+		    </ul>
+		{% endif %}
+	    </div>
+	    <!-- "ADD NEW CATALOG ITEM" FORM -->
+	    <div id="new-catitem-wrapper">
+		<h3>Add a catalog item</h3>
+		<form id="new-catitem" method="post" role="form">
+		    {{ newcat.hidden_tag() }}
+		    <div>
+			{{ newcat.author.label }}
+			{{ newcat.author }}
+		    </div>
+		    <div>
+			{{ newcat.callno.label }}
+			{{ newcat.callno }}
+		    </div>
+		    <div>
+			{{ newcat.title.label }}
+			{{ newcat.title }}
+		    </div>
+		    {{ newcat.submit }}			
+		</form>
+		{% if newcat.errors %}
+		    <ul class="errors">
+			{% for error in newcat.errors.values() %}
+			    <li>{{ ' '.join(error) }}</li>
+			{% endfor %}
+		    </ul>
+		{% endif %}
+	    </div>
+	</div>
+        <div>
+	    <p class="callout">
+ 		<img height="30"
+		     src="{{ url_for('static', filename='img/note.png') }}"
+		     alt="NOTE:" />
+		Click an item's row in the table below to list copies
+		of that item. From there, you may modify/delete
+		existing copies or add new copies.
+	    </p>
+	    <h2>Catalog Items</h2>
+            <table>
+		<caption>SQL table: Catalog_items</caption>
+		<tbody>
+                    <tr>
+			<th>id</th>
+			<th>author</th>
+			<th>call_number</th>
+			<th>title</th>
+                    </tr>
+		    {% for row in catalog_items %}
+			<tr class="catitem button">
+			    <td class="id mono">{{ row['id'] }}</td>
+                            <td class="author">{{ row['author'] }}</td>
+                            <td class="callno">{{ row['call_number'] }}</td>
+                            <td class="title">{{ row['title'] }}</td>
+			</tr>
+		    {% endfor %}
+		</tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="item-copies" style="display:none;">
+	<h2>Item Copies</h2>
+	<p class="item-copies-found">
+	    <span style="display:none;" class="catitem-id"></span>
+	    Displaying copies of "<cite class="catitem-title"></cite>" by 
+	    <span class="catitem-author"></span>. Click
+	    <img height="15"
+		 src="{{ url_for('static', filename='img/modify.png') }}"
+		 alt="modify item" />
+	    to update an entry. Click
+	    <img height="15"
+		 src="{{ url_for('static', filename='img/delete.png') }}"
+		 alt="delete item" />
+	    to delete an entry.
+	</p>
+	<p class="item-copies-not-found">
+	    There are <strong>no copies</strong> of "<cite class="catitem-title"></cite>" by
+	    <span class="catitem-author"></span> in the system.
+	</p>
+	<p class="add-new-item-copy">
+	    <img height="30"
+		 class="button"
+		 src="{{ url_for('static', filename='img/add.png') }}"
+		 alt="Click here to" />
+	    Add a new copy of "<cite class="catitem-title"></cite>" by&nbsp;
+	    <span class="catitem-author"></span>.
+	</p>
+	<table id="item-copies-table" class="item-copies-found">
+	    <caption>SQL table: Item_copies (Branches M:M Catalog_items)</caption>
+	    <tbody>
+		<tr>
+		    <th>id</th>
+		    <th>barcode</th>
+		    <th>home_branch</th>
+		    <th>status</th>		    
+		    <th>circs</th>
+		    <th></th>
+		    <th></th>
+		    <th></th>
+		</tr>
+	    </tbody>
+	</table>
+    </div>
+{% endblock %}

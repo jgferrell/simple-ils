@@ -1,0 +1,7 @@
+# rename to local_settings.py and update values as needed
+
+host = 'localhost'	      # database server
+user = 'db_username'	      # your SQL username
+password = 'db_password'      # your SQL password
+dbname = 'db_name'	      # the database name
+port = 80		      # the web port

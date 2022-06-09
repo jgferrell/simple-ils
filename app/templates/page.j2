@@ -1,0 +1,36 @@
+{# see: https://pythonhosted.org/Flask-Bootstrap/ (esp. #available-blocks) #}
+
+{% extends "bootstrap/base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% block title %}BiblioSQL Simple ILS: {% block page_title %}{% endblock page_title %}{% endblock title %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+{% endblock styles %}
+
+{% block navbar %}
+    <h1>BiblioSQL Simple <abbr title="Integrated Library System">ILS</abbr></h1>
+<ul id="navbar">
+    <li>
+	<a href="index.html">Homepage</a>
+    </li>
+    <li>
+	<a href="library_systems.html">Library Systems</a>
+    </li>
+    <li>
+	<a href="branches.html">Library Branches</a>
+    </li>
+    <li>
+	<a href="items.html">Catalog Items</a>
+    </li>
+    <li>
+	<a href="people.html">People</a>
+    </li>
+</ul>
+{% endblock navbar %}
+
+{% block content %}
+    <div id="page-content">
+	{% block page_content %}{% endblock page_content %}
+    </div>
+{% endblock content %}

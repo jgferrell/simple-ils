@@ -1,0 +1,33 @@
+{% extends 'page.j2' %}
+{% block title %}People{% endblock %}
+{% block page_content %}
+
+    <div class="form-wrapper">
+	<h3>Add new person</h3>
+	{{ wtf.quick_form(form) }}
+    </div>
+
+    <h2>People</h2>
+    <table>
+	<caption>SQL table: People</caption>
+	<tbody>
+    	    <tr>
+		<th>id</th>
+		<th>home_branch</th>
+		<th>last_name</th>
+		<th>first_name</th>
+		<th>suffix</th>
+    	    </tr>
+    	    {% for row in people %}
+    		<tr>
+                    <td class="mono">{{ row['id'] }}</td>
+                    <td class="mono"><abbr title="{{ row['home_branch_name'] }}">{{ row['home_branch_code'] }}</abbr></td>
+                    <td>{{ row['last_name'] }}</td>
+                    <td>{{ row['first_name'] }}</td>
+		    <td>{{ row['suffix'] }}</td>
+    		</tr>
+    	    {% endfor %}
+	</tbody>
+    </table>
+
+{% endblock %}
